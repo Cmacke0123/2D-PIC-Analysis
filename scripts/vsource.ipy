@@ -1,3 +1,7 @@
+##2D PIC Analysis  PHYS 448 
+##Author: Connor MacKenzie 
+
+
 import os 
 import re
 import numpy as np 
