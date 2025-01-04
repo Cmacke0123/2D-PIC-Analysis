@@ -154,6 +154,95 @@ for mco_file in mco_files:
 
 
 
+# input directories for hydrogen and deuterium data
+hydrogen_dir = "/mnt/cedar_mount_connor/cmacke01/sim7_data/Macho/2d_data"
+deuterium_dir = "/mnt/cedar_mount_connor/cmacke01/sim8_data/Macho/2d_data"
 
+# output directory for difference results
+output_dir = "/home/connorshmackk785/Documents/directed-studies/Results/78comparison"
+os.makedirs(output_dir, exist_ok=True)
+
+# process files
+hydrogen_files = sorted(os.listdir(hydrogen_dir))
+for h_file in hydrogen_files:
+    d_file = os.path.join(deuterium_dir, h_file)  # Match by filename
+    h_file_path = os.path.join(hydrogen_dir, h_file)
     
+    if not os.path.exists(d_file):
+        print(f"Deuterium file not found for {h_file}. Skipping.")
+        continue
+    
+    # load data
+    h_data = load_mco(h_file_path)
+    d_data = load_mco(d_file)
+    
+    if h_data is None or d_data is None:
+        print(f"Failed to load data for {h_file}. Skipping.")
+        continue
+    
+    # check grid sizes
+    if h_data.shape != d_data.shape:
+        print(f"Grid size mismatch for {h_file}. Skipping.")
+        continue
+    
+    # compute difference
+    difference = np.abs(h_data - d_data)
+    
+    # save difference as a plot
+    plt.figure(figsize=(8, 6))
+    plt.imshow(difference, cmap="coolwarm", origin="lower")
+    plt.colorbar(label="Difference")
+    plt.title(f"Difference for {h_file}")
+    plt.savefig(os.path.join(output_dir, f"difference_{h_file}.png"), bbox_inches ='tight')
+    plt.close()
+    
+    # Optionally save the difference data as a file
+    np.save(os.path.join(output_dir, f"difference_{h_file}.npy"), difference)
+
+print(f"Comparison completed. Results saved in {output_dir}.")
+    
+
+
+def compute_max_values(hydrogen_dir, deuterium_dir):
+    """
+    Computes and compares max values of hydrogen and deuterium simulation data.
+    
+    Args:
+        hydrogen_dir (str): Directory containing hydrogen simulation files.
+        deuterium_dir (str): Directory containing deuterium simulation files.
+    """
+    hydrogen_files = sorted(os.listdir(hydrogen_dir))
+    max_values = {}
+
+    for h_file in hydrogen_files:
+        d_file = os.path.join(deuterium_dir, h_file)
+        h_file_path = os.path.join(hydrogen_dir, h_file)
+
+        if not os.path.exists(d_file):
+            print(f"Deuterium file not found for {h_file}. Skipping.")
+            continue
+
+        # Load data
+        h_data = load_mco(h_file_path, normalize=False)
+        d_data = load_mco(d_file, normalize=False)
+
+        if h_data is None or d_data is None:
+            print(f"Failed to load data for {h_file}. Skipping.")
+            continue
+
+        # Compute max values
+        h_max = np.max(h_data)
+        d_max = np.max(d_data)
+        max_values[h_file] = {"Hydrogen": h_max, "Deuterium": d_max}
+
+    return max_values
+
+
+
+max_values = compute_max_values(hydrogen_dir, deuterium_dir)
+
+# Print and save results
+for file, values in max_values.items():
+    print(f"{file}: Hydrogen Max = {values['Hydrogen']}, Deuterium Max = {values['Deuterium']}")
+
 
